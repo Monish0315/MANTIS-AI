@@ -1,8 +1,16 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 
+type Agent = {
+  id: number;
+  name: string;
+  description: string | null;
+  created_at: string;
+};
+
 function App() {
   const [backendStatus, setBackendStatus] = useState("Checking...");
+  const [agents, setAgents] = useState<Agent[]>([]);
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/health")
@@ -20,8 +28,18 @@ function App() {
           setBackendStatus("Unexpected response");
         }
       })
-      .catch(() => {
-        setBackendStatus("Disconnected");
+      .catch((error) => {
+  console.error("Backend connection failed:", error);
+  setBackendStatus(`Disconnected: ${error.message}`);
+});
+
+    fetch("http://127.0.0.1:8000/agents")
+      .then((response) => response.json())
+      .then((data) => {
+        setAgents(data);
+      })
+      .catch((error) => {
+        console.error("Failed to load agents:", error);
       });
   }, []);
 
@@ -29,7 +47,7 @@ function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="logo">
-          <span className="logo-mark"> M </span>
+          <span className="logo-mark">M</span>
           <span>MANTIS</span>
         </div>
 
@@ -62,16 +80,12 @@ function App() {
               <span className="status-dot"></span>
               Agent Runtime: <strong>{backendStatus}</strong>
             </div>
-
-            <button className="primary-button">
-              Create your first agent
-            </button>
           </div>
 
           <div className="cards">
             <div className="card">
               <h3>Agents</h3>
-              <p>Create and manage your AI agents.</p>
+              <p>{agents.length} agent(s) available.</p>
             </div>
 
             <div className="card">
@@ -83,6 +97,25 @@ function App() {
               <h3>Models</h3>
               <p>Connect local and cloud AI models.</p>
             </div>
+          </div>
+
+          <div className="agent-list">
+            <h2>Agents</h2>
+
+            {agents.length === 0 ? (
+              <p>No agents found.</p>
+            ) : (
+              agents.map((agent) => (
+                <div className="agent-item" key={agent.id}>
+                  <div>
+                    <h3>{agent.name}</h3>
+                    <p>{agent.description || "No description"}</p>
+                  </div>
+
+                  <span>#{agent.id}</span>
+                </div>
+              ))
+            )}
           </div>
         </section>
       </main>

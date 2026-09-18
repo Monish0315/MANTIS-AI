@@ -1,18 +1,32 @@
-.status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 20px;
-  padding: 10px 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  background: white;
-  color: #475569;
+.agent-list {
+  margin-top: 32px;
 }
 
-.status-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: #22c55e;
+.agent-list h2 {
+  margin-bottom: 16px;
+}
+
+.agent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  margin-bottom: 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+
+.agent-item h3 {
+  margin: 0 0 6px;
+}
+
+.agent-item p {
+  margin: 0;
+  color: #64748b;
+}
+
+.agent-item span {
+  color: #64748b;
+  font-size: 14px;
 }
