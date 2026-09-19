@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
 
+from orchestrator.orchestrator import orchestrate
+
 
 app = FastAPI(title="MANTIS AI Operating Layer")
 
@@ -30,6 +32,23 @@ def health():
 
 @app.post("/chat")
 def chat(request: ChatRequest):
+    intent = None
+
+    try:
+        from orchestrator.intent import detect_intent
+        intent = detect_intent(request.message)
+    except Exception:
+        intent = "GENERAL_QUESTION"
+
+    if intent == "LOCAL_FILE_SEARCH":
+        result = orchestrate(request.message)
+
+        return {
+            "message": result["response"],
+            "intent": result["intent"],
+            "result": result["result"],
+        }
+
     response = requests.post(
         "http://127.0.0.1:11434/api/generate",
         json={
@@ -50,5 +69,6 @@ def chat(request: ChatRequest):
     data = response.json()
 
     return {
-        "message": data["response"]
+        "message": data["response"],
+        "intent": "GENERAL_QUESTION",
     }
