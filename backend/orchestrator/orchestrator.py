@@ -7,9 +7,9 @@ from orchestrator.parameters import (
     extract_windows_action_params,
 )
 from capabilities.file_search import search_files
-from capabilities.windows import open_folder
 from orchestrator.formatter import format_file_search_result
-
+from permissions.manager import requires_confirmation
+from execution.engine import execute_action
 
 def orchestrate(message: str) -> dict:
     intent = detect_intent(message)
@@ -38,8 +38,16 @@ def orchestrate(message: str) -> dict:
     elif valid and capability == "windows":
         parameters = extract_windows_action_params(message)
 
-        if parameters["action"] == "open_folder":
-            result = open_folder(parameters["folder"])
+        action = parameters["action"]
+
+        if action and requires_confirmation(action):
+            response = f"Confirmation required before performing: {action}"
+
+        elif action == "open_folder":
+            result = execute_action(
+                action,
+                parameters,
+            )
 
             if result["success"]:
                 response = f"Opened folder:\n{result['folder']}"

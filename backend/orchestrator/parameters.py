@@ -51,6 +51,17 @@ def extract_file_search_params(message: str) -> dict:
 def extract_windows_action_params(message: str) -> dict:
     text = message.lower()
 
+    if "shutdown" in text:
+        return {
+            "action": "shutdown",
+            "folder": None,
+        }
+
+    if "restart" in text:
+        return {
+            "action": "restart",
+            "folder": None,
+        }
     windows_path = re.search(
         r"[a-zA-Z]:\\(?:[^\\/:*?\"<>|\r\n]+\\)*[^\\/:*?\"<>|\r\n]*",
         message,

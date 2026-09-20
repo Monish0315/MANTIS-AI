@@ -11,6 +11,7 @@ function App() {
   const [backendStatus] = useState("Connected");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   const sendMessage = async () => {
     const text = message.trim();
@@ -55,6 +56,10 @@ function App() {
           content: data.message,
         },
       ]);
+
+      if (data.requires_confirmation) {
+        setPendingAction(data.action);
+      }
     } catch (error) {
       setMessages((current) => [
         ...current,
@@ -65,6 +70,46 @@ function App() {
         },
       ]);
     }
+  };
+
+  const handleConfirm = async () => {
+    if (!pendingAction) {
+      return;
+    }
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/confirm", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: pendingAction,
+        }),
+      });
+
+      const data = await response.json();
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: "assistant",
+          content: data.message,
+        },
+      ]);
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: "assistant",
+          content: "Failed to send confirmation.",
+        },
+      ]);
+    }
+
+    setPendingAction(null);
   };
 
   return (
@@ -165,6 +210,31 @@ function App() {
           )}
 
           <div className="composer-container">
+            {pendingAction && (
+              <div className="confirmation-box">
+                <strong>Confirmation required</strong>
+                <p>
+                  MANTIS is asking for permission to perform:
+                  <br />
+                  <strong>{pendingAction}</strong>
+                </p>
+                <div className="confirmation-actions">
+                  <button
+                    className="confirmation-btn-cancel"
+                    onClick={() => setPendingAction(null)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="confirmation-btn-confirm"
+                    onClick={handleConfirm}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="composer">
               <textarea
                 value={message}
