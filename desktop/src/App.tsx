@@ -12,60 +12,60 @@ function App() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
 
-const sendMessage = async () => {
-  const text = message.trim();
+  const sendMessage = async () => {
+    const text = message.trim();
 
-  if (!text) {
-    return;
-  }
-
-  setMessages((current) => [
-    ...current,
-    {
-      id: Date.now(),
-      role: "user",
-      content: text,
-    },
-  ]);
-
-  setMessage("");
-
-  try {
-    const response = await fetch("http://127.0.0.1:8000/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: text,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error("Backend request failed");
+    if (!text) {
+      return;
     }
 
-    const data = await response.json();
+    setMessages((current) => [
+      ...current,
+      {
+        id: Date.now(),
+        role: "user",
+        content: text,
+      },
+    ]);
 
-    setMessages((current) => [
-      ...current,
-      {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: data.message,
-      },
-    ]);
-  } catch (error) {
-    setMessages((current) => [
-      ...current,
-      {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: "Sorry, I could not connect to the MANTIS backend.",
-      },
-    ]);
-  }
-};
+    setMessage("");
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: text,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Backend request failed");
+      }
+
+      const data = await response.json();
+
+      setMessages((current) => [
+        ...current,
+        {
+          id: Date.now() + 1,
+          role: "assistant",
+          content: data.message,
+        },
+      ]);
+    } catch (error) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: Date.now() + 1,
+          role: "assistant",
+          content: "Sorry, I could not connect to the MANTIS backend.",
+        },
+      ]);
+    }
+  };
 
   return (
     <div className="app">
@@ -75,7 +75,7 @@ const sendMessage = async () => {
           <span>MANTIS</span>
         </div>
 
-        <button className="new-chat-button">
+        <button className="new-chat-button" onClick={() => setMessages([])}>
           + New Chat
         </button>
 
@@ -85,9 +85,7 @@ const sendMessage = async () => {
           {messages.length === 0 ? (
             <p className="history-empty">No conversations yet</p>
           ) : (
-            <p className="history-item">
-              Current conversation
-            </p>
+            <p className="history-item">Current conversation</p>
           )}
         </div>
 
@@ -117,8 +115,8 @@ const sendMessage = async () => {
               <h2>How can I help?</h2>
 
               <p>
-                Ask MANTIS to work with your computer,
-                files, information, and more.
+                Ask MANTIS to work with your computer, files, information, and
+                more.
               </p>
 
               <div className="suggestions">
@@ -142,11 +140,7 @@ const sendMessage = async () => {
                   Search my files
                 </button>
 
-                <button
-                  onClick={() =>
-                    setMessage("Summarize this PDF.")
-                  }
-                >
+                <button onClick={() => setMessage("Summarize this PDF.")}>
                   Summarize a document
                 </button>
               </div>
@@ -156,9 +150,7 @@ const sendMessage = async () => {
               {messages.map((item) => (
                 <div
                   className={`message ${
-                    item.role === "user"
-                      ? "message-user"
-                      : "message-assistant"
+                    item.role === "user" ? "message-user" : "message-assistant"
                   }`}
                   key={item.id}
                 >
@@ -166,43 +158,40 @@ const sendMessage = async () => {
                     {item.role === "user" ? "You" : "MANTIS"}
                   </div>
 
-                  <div className="message-content">
-                    {item.content}
-                  </div>
+                  <div className="message-content">{item.content}</div>
                 </div>
               ))}
             </div>
           )}
 
-          <div className="composer">
-            <textarea
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              onKeyDown={(event) => {
-                if (
-                  event.key === "Enter" &&
-                  !event.shiftKey
-                ) {
-                  event.preventDefault();
-                  sendMessage();
-                }
-              }}
-              placeholder="Ask MANTIS anything..."
-              rows={1}
-            />
+          <div className="composer-container">
+            <div className="composer">
+              <textarea
+                value={message}
+                onChange={(event) => setMessage(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                placeholder="Ask MANTIS anything..."
+                rows={1}
+              />
 
-            <button
-              className="send-button"
-              onClick={sendMessage}
-              disabled={!message.trim()}
-            >
-              ↑
-            </button>
+              <button
+                className="send-button"
+                onClick={sendMessage}
+                disabled={!message.trim()}
+              >
+                ↑
+              </button>
+            </div>
+
+            <p className="composer-hint">
+              Enter to send · Shift + Enter for a new line
+            </p>
           </div>
-
-          <p className="composer-hint">
-            Enter to send · Shift + Enter for a new line
-          </p>
         </section>
       </main>
     </div>

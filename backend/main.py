@@ -40,7 +40,7 @@ def chat(request: ChatRequest):
     except Exception:
         intent = "GENERAL_QUESTION"
 
-    if intent == "LOCAL_FILE_SEARCH":
+    if intent in ["LOCAL_FILE_SEARCH", "WINDOWS_ACTION"]:
         result = orchestrate(request.message)
 
         return {
