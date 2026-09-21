@@ -104,7 +104,6 @@ def chat(request: ChatRequest):
 class ConfirmationRequest(BaseModel):
     action: str
 
-
 @app.post("/confirm")
 def confirm_action(request: ConfirmationRequest):
     global pending_confirmation
@@ -124,8 +123,24 @@ def confirm_action(request: ConfirmationRequest):
     action = pending_confirmation
     pending_confirmation = None
 
+    from execution.engine import execute_action
+
+    result = execute_action(
+        action,
+        authorized=True,
+    )
+
+    if result["success"]:
+        return {
+            "success": True,
+            "message": f"Action '{action}' was executed successfully.",
+            "action": action,
+            "result": result,
+        }
+
     return {
-        "success": True,
-        "message": f"Action '{action}' was explicitly confirmed.",
+        "success": False,
+        "message": result["error"],
         "action": action,
+        "result": result,
     }

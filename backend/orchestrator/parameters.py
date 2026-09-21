@@ -2,6 +2,12 @@ import re
 from pathlib import Path
 
 
+WINDOWS_PATH_PATTERN = (
+    r'[a-zA-Z]:\\(?:[^\\/:*?"<>|\r\n]+\\)*'
+    r'[^\\/:*?"<>|\r\n]*'
+)
+
+
 def extract_file_search_params(message: str) -> dict:
     text = message.lower()
 
@@ -17,15 +23,13 @@ def extract_file_search_params(message: str) -> dict:
         extension = ".py"
 
     windows_path = re.search(
-        r"[a-zA-Z]:\\(?:[^\\/:*?\"<>|\r\n]+\\)*[^\\/:*?\"<>|\r\n]*",
+        WINDOWS_PATH_PATTERN,
         message,
     )
 
     if windows_path:
-        folder = windows_path.group(0)
-
         return {
-            "folder": folder,
+            "folder": windows_path.group(0),
             "extension": extension,
         }
 
@@ -34,7 +38,13 @@ def extract_file_search_params(message: str) -> dict:
     folder = None
 
     if "mantis" in text:
-        folder = home / "OneDrive" / "Documents" / "AI Bot" / "MANTIS"
+        folder = (
+            home
+            / "OneDrive"
+            / "Documents"
+            / "AI Bot"
+            / "MANTIS"
+        )
     elif "documents" in text:
         folder = home / "Documents"
     elif "downloads" in text:
@@ -49,7 +59,11 @@ def extract_file_search_params(message: str) -> dict:
 
 
 def extract_windows_action_params(message: str) -> dict:
-    text = message.lower()
+    text = message.lower().strip()
+
+    # ---------------------------------
+    # High-risk actions
+    # ---------------------------------
 
     if "shutdown" in text:
         return {
@@ -62,16 +76,49 @@ def extract_windows_action_params(message: str) -> dict:
             "action": "restart",
             "folder": None,
         }
+
+    # ---------------------------------
+    # URLs
+    # ---------------------------------
+
+    url_match = re.search(
+        r"https?://[^\s]+",
+        message,
+        re.IGNORECASE,
+    )
+
+    if url_match:
+        return {
+            "action": "open_url",
+            "url": url_match.group(0),
+        }
+
+    # ---------------------------------
+    # Windows file/folder paths
+    # ---------------------------------
+
     windows_path = re.search(
-        r"[a-zA-Z]:\\(?:[^\\/:*?\"<>|\r\n]+\\)*[^\\/:*?\"<>|\r\n]*",
+        WINDOWS_PATH_PATTERN,
         message,
     )
 
     if windows_path:
+        path = windows_path.group(0)
+
+        if Path(path).is_file():
+            return {
+                "action": "open_file",
+                "file": path,
+            }
+
         return {
             "action": "open_folder",
-            "folder": windows_path.group(0),
+            "folder": path,
         }
+
+    # ---------------------------------
+    # Common Windows folders
+    # ---------------------------------
 
     home = Path.home()
 
@@ -97,9 +144,39 @@ def extract_windows_action_params(message: str) -> dict:
         return {
             "action": "open_folder",
             "folder": str(
-                home / "OneDrive" / "Documents" / "AI Bot" / "MANTIS"
+                home
+                / "OneDrive"
+                / "Documents"
+                / "AI Bot"
+                / "MANTIS"
             ),
         }
+
+    # ---------------------------------
+    # Allowlisted applications
+    # ---------------------------------
+
+    applications = {
+        "notepad": "notepad",
+        "calculator": "calculator",
+        "calc": "calculator",
+        "paint": "paint",
+        "mspaint": "paint",
+    }
+
+    for name, application in applications.items():
+        if re.search(
+            rf"\b{re.escape(name)}\b",
+            text,
+        ):
+            if re.search(
+                r"\b(launch|open|start|run)\b",
+                text,
+            ):
+                return {
+                    "action": "launch_application",
+                    "application": application,
+                }
 
     return {
         "action": None,
