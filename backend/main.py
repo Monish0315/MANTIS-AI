@@ -3,11 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import requests
 from typing import Optional
-
+from memory.conversation import initialize_memory
 from orchestrator.orchestrator import orchestrate
-
+from memory.conversation import (
+    initialize_memory,
+    save_message,
+)
+from memory.conversation import (
+    initialize_memory,
+    save_message,
+    build_conversation_context,
+)
 
 app = FastAPI(title="MANTIS AI Operating Layer")
+initialize_memory()
 pending_confirmation: Optional[str] = None
 
 app.add_middleware(
@@ -33,6 +42,10 @@ def health():
 
 @app.post("/chat")
 def chat(request: ChatRequest):
+    save_message(
+    "user",
+    request.message,
+)
     intent = None
 
     try:
@@ -66,11 +79,26 @@ def chat(request: ChatRequest):
             }
         )
 
+        assistant_message = result["response"]
+
+        save_message(
+            "assistant",
+            assistant_message,
+        )
+
         return {
-            "message": result["response"],
+            "message": assistant_message,
             "intent": result["intent"],
             "result": result["result"],
-            "requires_confirmation": requires_confirmation,
+            "requires_confirmation": (
+                intent == "WINDOWS_ACTION"
+                and result["parameters"]
+                and result["parameters"].get("action") in {
+                    "shutdown",
+                    "restart",
+                    "close_application",
+                }
+            ),
             "action": (
                 result["parameters"].get("action")
                 if result["parameters"]
@@ -78,16 +106,31 @@ def chat(request: ChatRequest):
             ),
         }
 
+    conversation_context = build_conversation_context(
+        limit=10
+    )
+
+    system_prompt = (
+        "You are MANTIS, a Windows AI assistant. "
+        "You are running locally through Ollama. "
+        "Answer the user's request clearly and helpfully."
+    )
+
+    if conversation_context:
+        system_prompt += (
+            "\n\nHere is the recent conversation history. "
+            "Use it to understand references such as "
+            "'it', 'that', 'the previous one', or "
+            "'what I just said'.\n\n"
+            + conversation_context
+        )
+
     response = requests.post(
         "http://127.0.0.1:11434/api/generate",
         json={
             "model": "qwen3:4b",
             "prompt": request.message,
-            "system": (
-                "You are MANTIS, a Windows AI assistant. "
-                "You are running locally through Ollama. "
-                "Answer the user's request clearly and helpfully."
-            ),
+            "system": system_prompt,
             "stream": False,
         },
         timeout=120,
@@ -97,8 +140,15 @@ def chat(request: ChatRequest):
 
     data = response.json()
 
+    assistant_message = data["response"]
+
+    save_message(
+        "assistant",
+        assistant_message,
+    )
+
     return {
-        "message": data["response"],
+        "message": assistant_message,
         "intent": "GENERAL_QUESTION",
     }
 class ConfirmationRequest(BaseModel):
@@ -143,4 +193,23 @@ def confirm_action(request: ConfirmationRequest):
         "message": result["error"],
         "action": action,
         "result": result,
+    }
+@app.get("/memory")
+def memory():
+    from memory.conversation import get_recent_messages
+
+    return {
+        "messages": get_recent_messages(20)
+    }
+@app.post("/ingest")
+def ingest(path: str):
+    from memory.ingestion import ingest_document
+
+    return ingest_document(path)
+@app.get("/documents")
+def documents():
+    from memory.conversation import get_documents
+
+    return {
+        "documents": get_documents()
     }

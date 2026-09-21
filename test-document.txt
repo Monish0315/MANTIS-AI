@@ -1,0 +1,8 @@
+MANTIS is a Windows AI assistant.
+
+It can understand natural language requests,
+search local files, and execute controlled
+Windows actions.
+
+The project uses Tauri, React, TypeScript,
+FastAPI, Python, and Ollama.
