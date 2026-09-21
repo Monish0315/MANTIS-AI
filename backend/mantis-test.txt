@@ -1,0 +1,9 @@
+MANTIS is a Windows AI assistant designed to act as an AI operating layer for Windows.
+
+MANTIS allows users to interact with their computer using natural language.
+
+It can search local files, open folders, launch approved applications, answer questions using a local AI model, and retrieve information from local documents.
+
+The MANTIS backend uses Python and FastAPI. The desktop application uses Tauri, React, and TypeScript. Ollama provides local AI models.
+
+MANTIS uses document ingestion, chunking, embeddings, and vector search to prepare for retrieval augmented generation.

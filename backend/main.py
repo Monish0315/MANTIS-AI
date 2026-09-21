@@ -213,3 +213,62 @@ def documents():
     return {
         "documents": get_documents()
     }
+@app.get("/documents/{document_id}/chunks")
+def document_chunks(document_id: int):
+    from memory.conversation import (
+        get_document_chunks
+    )
+
+    return {
+        "document_id": document_id,
+        "chunks": get_document_chunks(
+            document_id
+        ),
+    }
+
+@app.get("/chunks/{chunk_id}/embedding")
+def chunk_embedding(chunk_id: int):
+    from memory.conversation import (
+        get_chunk_embedding
+    )
+
+    embedding = get_chunk_embedding(
+        chunk_id
+    )
+
+    if embedding is None:
+        return {
+            "success": False,
+            "error": "Embedding not found",
+        }
+
+    return {
+        "success": True,
+        "chunk_id": embedding["chunk_id"],
+        "dimensions": embedding["dimensions"],
+        "model": embedding["model"],
+        "timestamp": embedding["timestamp"],
+        "embedding_preview": (
+            embedding["embedding"][:10]
+        ),
+    }
+@app.get("/search")
+def search_documents(
+    query: str,
+    top_k: int = 5,
+):
+    from memory.vector_search import (
+        search_similar_chunks
+    )
+
+    results = search_similar_chunks(
+        query,
+        top_k,
+    )
+
+    return {
+        "query": query,
+        "results": results,
+    }
+
+    

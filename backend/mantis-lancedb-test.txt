@@ -1,0 +1,5 @@
+﻿MANTIS uses LanceDB as its vector memory system.
+
+LanceDB stores document embeddings and allows MANTIS to perform semantic similarity search over local documents.
+
+MANTIS also uses SQLite for structured application data and conversation memory.
